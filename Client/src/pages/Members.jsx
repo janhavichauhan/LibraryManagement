@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, User, BookOpen, LogOut, CheckCircle } from 'lucide-react';
+import { UserPlus, User, BookOpen, LogOut, CheckCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as API from '../api/api';
 
@@ -35,6 +35,21 @@ const Members = () => {
     }
   };
 
+  const handleDeleteMember = async (memberId, memberName, hasLoans) => {
+    if (hasLoans) {
+      toast.error("Cannot delete member with active loans");
+      return;
+    }
+    
+    try {
+      const res = await API.deleteMember(memberId);
+      toast.success(res.data.message || "Member deleted successfully!");
+      loadMembers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting member");
+    }
+  };
+
   return (
     <div className="p-8 h-screen overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
@@ -56,7 +71,8 @@ const Members = () => {
             <tr>
               <th className="p-4 pl-6 font-semibold w-1/4">Name</th>
               <th className="p-4 font-semibold w-1/2">Active Loans (Take Back)</th>
-              <th className="p-4 font-semibold w-1/4">Status</th>
+              <th className="p-4 font-semibold w-1/5">Status</th>
+              <th className="p-4 font-semibold w-[100px] text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -108,6 +124,20 @@ const Members = () => {
                     {member.activeLoans.length > 0 ? <CheckCircle size={12}/> : <User size={12}/>}
                     {member.activeLoans.length > 0 ? 'Active' : 'Idle'}
                   </span>
+                </td>
+                
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => handleDeleteMember(member._id, `${member.firstName} ${member.lastName}`, member.activeLoans.length > 0)}
+                    className={`p-2 rounded-lg transition ${
+                      member.activeLoans.length > 0 
+                        ? 'text-gray-300 cursor-not-allowed' 
+                        : 'text-red-500 hover:bg-red-50'
+                    }`}
+                    title={member.activeLoans.length > 0 ? "Cannot delete member with active loans" : "Delete member"}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             ))}
