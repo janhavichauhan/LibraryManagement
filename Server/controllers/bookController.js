@@ -3,22 +3,19 @@ import Loan from "../models/Loan.js";
 import Member from "../models/Member.js";
 import axios from "axios";
 
-// 1. Add Book (Reject Duplicates)
 export const addBook = async (req, res) => {
   try {
-    const { title, author, tags } = req.body;
-    // Case-insensitive duplicate check
+    const { title, author, tags, coverImage } = req.body;
     const existing = await Book.findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
     if (existing) return res.status(400).json({ message: "Book with this title already exists." });
 
-    const newBook = await Book.create({ title, author, tags });
+    const newBook = await Book.create({ title, author, tags, coverImage });
     res.status(201).json(newBook);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// 2. Lend Book (Handle Waitlist)
 export const lendBook = async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -29,10 +26,9 @@ export const lendBook = async (req, res) => {
 
     if (!book || !member) return res.status(404).json({ message: "Book or Member not found" });
 
-    // Scenario A: Book is Available -> Lend it
     if (book.status === "AVAILABLE") {
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
+      dueDate.setDate(dueDate.getDate() + 7);
 
       const loan = await Loan.create({ book: book._id, member: member._id, dueDate });
       
@@ -46,9 +42,7 @@ export const lendBook = async (req, res) => {
       return res.json({ message: "Book borrowed successfully", loan });
     }
 
-    // Scenario B: Book is Borrowed -> Add to Waitlist
     if (book.status === "BORROWED") {
-      // Check if already in waitlist
       if (book.waitlist.includes(memberId)) {
         return res.status(400).json({ message: "Member already in waitlist" });
       }
@@ -62,31 +56,32 @@ export const lendBook = async (req, res) => {
 };
 
 
-// 4. Populate (Bonus Requirement)
 export const populateBooks = async (req, res) => {
     try {
         const { genre } = req.body;
-        // Use Open Library API
         const response = await axios.get(`https://openlibrary.org/subjects/${genre.toLowerCase()}.json?limit=10`);
         
         const works = response.data.works;
         let addedCount = 0;
 
         for (const work of works) {
-            const title = work.title;
-            const author = work.authors?.[0]?.name || "Unknown";
-            
-            // Check duplicate
-            const exists = await Book.findOne({ title: title });
-            if (!exists) {
-                await Book.create({
-                    title,
-                    author,
-                    tags: [genre, "imported"],
-                    status: "AVAILABLE"
-                });
-                addedCount++;
-            }
+          const title = work.title;
+          const author = work.authors?.[0]?.name || "Unknown";
+          const coverImage = work.cover_id
+            ? `https://covers.openlibrary.org/b/id/${work.cover_id}-M.jpg`
+            : "";
+
+          const exists = await Book.findOne({ title: title });
+          if (!exists) {
+            await Book.create({
+              title,
+              author,
+              tags: [genre, "imported"],
+              status: "AVAILABLE",
+              coverImage
+            });
+            addedCount++;
+          }
         }
         res.json({ message: `Successfully added ${addedCount} books for genre '${genre}'` });
     } catch (err) {
@@ -103,31 +98,45 @@ export const getBooks = async (req, res) => {
     }
 };
 
-// controllers/bookController.js
+export const deleteBook = async (req, res) => {
+  try {
+    const { bookId } = req.params;
+    const book = await Book.findById(bookId);
+    
+    if (!book) return res.status(404).json({ message: "Book not found" });
+    
+    if (book.status === "BORROWED" || book.status === "LOANED") {
+      return res.status(400).json({ message: "Cannot delete a book that is currently borrowed" });
+    }
+    
+    await Loan.deleteMany({ book: bookId });
+    
+    await Book.findByIdAndDelete(bookId);
+    
+    res.json({ message: "Book deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const returnBook = async (req, res) => {
   try {
     const { bookId } = req.params;
     const book = await Book.findById(bookId).populate("waitlist");
     
-    // 1. Find the active loan for this book and close it
     const currentLoan = await Loan.findOne({ book: bookId });
     
     if (currentLoan) {
-        // Remove the loan from the member's list
         await Member.findByIdAndUpdate(currentLoan.member, { 
             $pull: { activeLoans: currentLoan._id } 
         });
-        // Delete the loan entry (or you could mark it as returned)
         await Loan.findByIdAndDelete(currentLoan._id); 
     }
 
-    // 2. CHECK WAITLIST LOGIC
     if (book.waitlist.length > 0) {
-      // Scenario A: Someone is waiting -> Auto-assign to them
-      const nextMemberId = book.waitlist.shift(); // Remove first person from line
+      const nextMemberId = book.waitlist.shift();
       const nextMember = await Member.findById(nextMemberId);
 
-      // Create new loan for the next person
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
       
@@ -140,7 +149,6 @@ export const returnBook = async (req, res) => {
       nextMember.activeLoans.push(newLoan._id);
       await nextMember.save();
 
-      // Book remains 'BORROWED', just changes hands
       book.checkoutCount += 1;
       await book.save();
 
@@ -150,7 +158,6 @@ export const returnBook = async (req, res) => {
       });
 
     } else {
-      // Scenario B: No waitlist -> ADD BACK TO LIBRARY
       book.status = "AVAILABLE"; 
       await book.save();
       

@@ -6,7 +6,8 @@ const bookSchema = new mongoose.Schema({
   tags: [String],
   status: { type: String, default: "AVAILABLE" },
   checkoutCount: { type: Number, default: 0 },
-  waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }]
+  waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Member" }],
+  coverImage: { type: String, default: "" }
 });
 
 export default mongoose.model("Book", bookSchema);
