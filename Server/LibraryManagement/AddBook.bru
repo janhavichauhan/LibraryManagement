@@ -1,0 +1,25 @@
+meta {
+  name: AddBook
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:5000/api/books/addBook
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Atomic Habits",
+    "author": "James Clear",
+    "tags": ["self-help"]
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
