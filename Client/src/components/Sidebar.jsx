@@ -23,12 +23,6 @@ const Sidebar = () => {
         <NavLink to="/members" className={navClass}><Users size={20} /> Members</NavLink>
         <NavLink to="/reports" className={navClass}><FileBarChart size={20} /> Reports</NavLink>
       </nav>
-
-      <div className="mt-auto">
-         <button className="flex items-center gap-3 px-4 py-3 text-textSub hover:text-red-500 transition-colors w-full">
-            <LogOut size={20} /> Logout
-         </button>
-      </div>
     </div>
   );
 };
