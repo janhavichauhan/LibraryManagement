@@ -1,0 +1,88 @@
+name: Cypress E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Server Dependencies
+        working-directory: ./Server
+        run: npm ci
+
+      - name: Create Server .env file
+        working-directory: ./Server
+        run: |
+          echo "PORT=5000" > .env
+          echo "MONGO_URI=mongodb://localhost:27017/libraryTestDB" >> .env
+          echo "NODE_ENV=test" >> .env
+
+      - name: Start Server
+        working-directory: ./Server
+        run: npm start &
+        
+      - name: Wait for Server
+        run: npx wait-on http://localhost:5000 --timeout 30000
+
+      - name: Install Client Dependencies
+        working-directory: ./Client
+        run: npm ci
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: ./Client
+          start: npm run dev
+          wait-on: 'http://localhost:5173'
+          wait-on-timeout: 60
+          browser: chrome
+          headless: true
+
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: Client/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos
+          path: Client/cypress/videos
+          if-no-files-found: ignore
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-results
+          path: Client/cypress/results
+          if-no-files-found: ignore

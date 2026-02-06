@@ -13,7 +13,7 @@ const Reports = () => {
 
   return (
     <div className="p-8">
-      <h2 className="text-2xl font-bold text-navy mb-8">Library Insights</h2>
+      <h2 className="text-2xl font-bold text-navy mb-8">Library Reports</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         

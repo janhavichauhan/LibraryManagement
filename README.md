@@ -264,6 +264,34 @@ http://localhost:5173
 | GET | `/api/reports/overdue` | Get overdue books |
 | GET | `/api/reports/top-books` | Get top 5 borrowed books |
 
+## 🧪 Testing
+
+This project includes comprehensive E2E tests using Cypress. See [TESTING.md](Client/TESTING.md) for detailed testing documentation.
+
+### Quick Start
+
+```bash
+# Run tests in interactive mode
+cd Client
+npm run cypress:open
+
+# Run tests in headless mode
+npm test
+```
+
+### Test Coverage
+
+- ✅ Book catalog management
+- ✅ Member operations
+- ✅ Lending and returning flows
+- ✅ Waitlist management
+- ✅ Navigation and UI
+- ✅ API endpoints
+- ✅ Error handling
+- ✅ Complete user workflows
+
+For more details, see [Client/TESTING.md](Client/TESTING.md).
+
 ## 🗄️ Database Schemas
 
 ### Book Schema
