@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, User, BookOpen, LogOut, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import * as API from '../api/api';
 
 const Members = () => {
@@ -25,14 +26,12 @@ const Members = () => {
   };
 
   const handleTakeBack = async (bookId, memberName, bookTitle) => {
-    if(!window.confirm(`Take back "${bookTitle}" from ${memberName}?`)) return;
-
     try {
       const res = await API.returnBook(bookId);
-      alert(`Success: ${res.data.message}`);
-      loadMembers(); // Refresh list to remove the book from this member
+      toast.success(res.data.message || "Book returned successfully!");
+      loadMembers();
     } catch (err) {
-      alert("Error taking back book");
+      toast.error(err.response?.data?.message || "Error taking back book");
     }
   };
 
@@ -63,7 +62,6 @@ const Members = () => {
           <tbody className="divide-y divide-gray-100">
             {members.map(member => (
               <tr key={member._id} className="hover:bg-gray-50 transition group">
-                {/* Member Name */}
                 <td className="p-4 pl-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-primary font-bold">
@@ -76,7 +74,6 @@ const Members = () => {
                   </div>
                 </td>
 
-                {/* Active Loans List with Buttons */}
                 <td className="p-4">
                   {member.activeLoans && member.activeLoans.length > 0 ? (
                     <div className="flex flex-col gap-2">
@@ -104,7 +101,6 @@ const Members = () => {
                   )}
                 </td>
 
-                {/* Status Badge */}
                 <td className="p-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
                     member.activeLoans.length > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -119,7 +115,6 @@ const Members = () => {
         </table>
       </div>
 
-      {/* Add Member Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-96 shadow-2xl">
