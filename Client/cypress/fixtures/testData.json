@@ -1,0 +1,36 @@
+{
+  "testBooks": [
+    {
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "tags": ["programming", "software"],
+      "coverImage": ""
+    },
+    {
+      "title": "The Pragmatic Programmer",
+      "author": "Andrew Hunt",
+      "tags": ["programming", "career"],
+      "coverImage": ""
+    },
+    {
+      "title": "Design Patterns",
+      "author": "Gang of Four",
+      "tags": ["programming", "patterns"],
+      "coverImage": ""
+    }
+  ],
+  "testMembers": [
+    {
+      "firstName": "Alice",
+      "lastName": "Johnson"
+    },
+    {
+      "firstName": "Bob",
+      "lastName": "Smith"
+    },
+    {
+      "firstName": "Charlie",
+      "lastName": "Brown"
+    }
+  ]
+}
